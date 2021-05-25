@@ -22,22 +22,27 @@
 
 #include "KeyTable.h"
 #include "Ps2Protocol.hh"
+#include "PollingEncoder.hh"
 
 // when turned on keyboard sends AA BF B6 when this equals 3 all 3 codes arrived
 // default to sequence done for now, investigate how to always make it send the sequence
 // even when starts together with the arduino
 static volatile uint8_t aabfb6_status = 0;
+static volatile bool greek_pressed = false;
 
 #define DATA_PIN 3
 #define IRQ_PIN 2
 
-#define numLockLed 10
-#define capsLed 11 
+#define numLockLed 4
+#define capsLed 5
+#define scrollLed 5
 
+PollingEncoder encoder1(21, 20);
 
 void setup() {
     setup_key_table();
     Serial.begin(9600);
+
     BootKeyboard.begin();
 
     pinMode(IRQ_PIN, INPUT_PULLUP);
@@ -50,6 +55,73 @@ void setup() {
 }
 
 void loop() {
+    PollingEncoder::Direction enc1Direction = encoder1.poll();
+
+    switch (enc1Direction) {
+    case PollingEncoder::Left:
+        BootKeyboard.write(KEY_LEFT_ARROW);
+        break;
+    case PollingEncoder::Right:
+        BootKeyboard.write(KEY_RIGHT_ARROW);
+        break;
+    default:
+        break;
+    }
+
+    sync_leds();
+
+    static bool next_is_break = false;
+    uint8_t scan_code = Ps2Protocol.popScancode();
+
+    if (scan_code) {
+        Serial.println(scan_code, HEX);
+
+        switch (aabfb6_status) {
+        case 0:
+            if (scan_code == 0xAA) {
+                aabfb6_status = 1;
+                return;
+            }
+            break;
+        case 1:
+            if (scan_code == 0xBF) {
+                aabfb6_status = 2;
+            }
+            return;
+        case 2:
+            if (scan_code == 0xB6) {
+                aabfb6_status = 0;
+               // Ask the keyboard to send Make and Break codes
+               Ps2Protocol.sendMessage(0xF8);
+            }
+            return;  
+        case 3:
+        default:
+            break;
+        }
+
+        switch (scan_code) {
+        case 0xF0:
+            next_is_break = true;
+            break;
+        case 0x0A:
+            greek_pressed = !next_is_break;
+            break;
+        default:
+            if (next_is_break) {
+                BootKeyboard.release(key_table[scan_code]);
+            } else {
+                BootKeyboard.press(key_table[scan_code]);
+            }
+            next_is_break = false;
+        }
+
+        next_is_break = scan_code == 0xF0;
+    }
+}
+
+inline void sync_leds()
+{
     const uint8_t ledsStatus = BootKeyboard.getLeds();
     if (ledsStatus & LED_NUM_LOCK) {
         digitalWrite(numLockLed, HIGH);
@@ -62,50 +134,8 @@ void loop() {
         digitalWrite(capsLed, LOW);
     }
     if (ledsStatus & LED_SCROLL_LOCK) {
-        digitalWrite(capsLed, HIGH);
+        digitalWrite(scrollLed, HIGH);
     } else {
-        digitalWrite(capsLed, LOW);
-    }
-
-    static bool next_is_break = true;
-    uint8_t scan_code = Ps2Protocol.popScancode();
-
-    if (scan_code) {
-        Serial.println(scan_code, HEX);
-
-        switch (aabfb6_status) {
-        case 0:
-            if (scan_code == 0xAA) {
-                aabfb6_status = 1;
-            }
-            return;
-        case 1:
-            if (scan_code == 0xBF) {
-                aabfb6_status = 2;
-            }
-            return;
-        case 2:
-            if (scan_code == 0xB6) {
-                aabfb6_status = 3;
-               // Ask the keyboard to send Make and Break codes
-               Ps2Protocol.sendMessage(0xF8);
-            }
-            return;  
-        case 3:
-        default:
-            break;
-        }
-
-
-        if (scan_code == 0xF0) {
-            next_is_break = true;
-        } else {
-            if (next_is_break) {
-                BootKeyboard.release(key_table[scan_code]);
-            } else {
-                BootKeyboard.press(key_table[scan_code]);
-            }
-            next_is_break = false;
-        }
+        digitalWrite(scrollLed, LOW);
     }
 }
