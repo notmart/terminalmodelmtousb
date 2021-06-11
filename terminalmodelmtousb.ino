@@ -21,6 +21,7 @@
 #include "HID-Project.h"
 
 #include "KeyTable.h"
+#include "MacroTable.h"
 #include "Ps2Protocol.hh"
 #include "PollingEncoder.hh"
 
@@ -28,7 +29,10 @@
 // default to sequence done for now, investigate how to always make it send the sequence
 // even when starts together with the arduino
 static volatile uint8_t aabfb6_status = 0;
-static volatile bool greek_pressed = false;
+
+// Macros are funcion pointers
+static void (*macro_to_execute)() = nullptr;
+
 
 #define DATA_PIN 3
 #define IRQ_PIN 2
@@ -44,6 +48,7 @@ PollingEncoder encoder3(20, 21, 19);
 
 void setup() {
     setup_key_table();
+    setup_macro_table();
     Serial.begin(9600);
 
     BootKeyboard.begin();
@@ -163,17 +168,21 @@ void loop() {
             break;
         }
 
+        // Scancode mapping
         switch (scan_code) {
         case 0xF0:
             next_is_break = true;
             break;
-        case 0x0A:
-            greek_pressed = !next_is_break;
-            break;
         default:
+            macro_to_execute = macro_table[scan_code];
+
             if (next_is_break) {
-                BootKeyboard.release(key_table[scan_code]);
-            } else {
+                if (macro_to_execute) {
+                    macro_to_execute();
+                } else {
+                    BootKeyboard.release(key_table[scan_code]);
+                }
+            } else if (macro_to_execute == nullptr) {
                 BootKeyboard.press(key_table[scan_code]);
             }
             next_is_break = false;
