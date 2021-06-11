@@ -19,20 +19,18 @@
 
 #include "PollingEncoder.hh"
 
-PollingEncoder::PollingEncoder(uint8_t leftPin, uint8_t rightPin)
+PollingEncoder::PollingEncoder(uint8_t leftPin, uint8_t rightPin, uint8_t buttonPin)
+    : m_leftPin(leftPin),
+      m_rightPin(rightPin),
+      m_buttonPin(buttonPin)
 {
-    m_leftPin = leftPin;
-    m_rightPin = rightPin;
-
-    m_lastEncoded = 0;
-
     pinMode(m_leftPin, INPUT_PULLUP);
     pinMode(m_rightPin, INPUT_PULLUP);
 
-
+    pinMode(m_buttonPin, INPUT);
 }
 
-PollingEncoder::Direction PollingEncoder::poll()
+PollingEncoder::Direction PollingEncoder::pollDirection()
 {
     const int leftBit = digitalRead(m_leftPin);
     const int rightBit = digitalRead(m_rightPin);
@@ -61,3 +59,14 @@ PollingEncoder::Direction PollingEncoder::poll()
     return ret;
 }
 
+PollingEncoder::ButtonState PollingEncoder::pollButton()
+{
+    const ButtonState buttonState = digitalRead(m_buttonPin) ? Pressed : Released;
+
+    if (m_lastButtonState != buttonState) {
+        m_lastButtonState = buttonState;
+        return m_lastButtonState;
+    } else {
+        return Unchanged;
+    }
+}

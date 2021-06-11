@@ -35,9 +35,12 @@ static volatile bool greek_pressed = false;
 
 #define numLockLed 4
 #define capsLed 5
-#define scrollLed 5
+#define scrollLed 6
 
-PollingEncoder encoder1(21, 20);
+
+PollingEncoder encoder1(10, 16, 7);
+PollingEncoder encoder2(15, 18, 14);
+PollingEncoder encoder3(20, 21, 19);
 
 void setup() {
     setup_key_table();
@@ -55,7 +58,7 @@ void setup() {
 }
 
 void loop() {
-    PollingEncoder::Direction enc1Direction = encoder1.poll();
+    PollingEncoder::Direction enc1Direction = encoder1.pollDirection();
 
     switch (enc1Direction) {
     case PollingEncoder::Left:
@@ -68,13 +71,73 @@ void loop() {
         break;
     }
 
+    switch(encoder1.pollButton()) {
+    case PollingEncoder::Pressed:
+        BootKeyboard.press(KEY_SPACE);
+        break;
+    case PollingEncoder::Released:
+        BootKeyboard.release(KEY_SPACE);
+        break;
+    default:
+        break;
+    }
+
+    PollingEncoder::Direction enc2Direction = encoder2.pollDirection();
+
+    switch (enc2Direction) {
+    case PollingEncoder::Left:
+        BootKeyboard.press(KEY_LEFT_CTRL);
+        BootKeyboard.press(KEY_LEFT_SHIFT);
+        BootKeyboard.write(KEY_TAB);
+        BootKeyboard.release(KEY_LEFT_SHIFT);
+        BootKeyboard.release(KEY_LEFT_CTRL);
+        break;
+    case PollingEncoder::Right:
+        BootKeyboard.press(KEY_LEFT_CTRL);
+        BootKeyboard.write(KEY_TAB);
+        BootKeyboard.release(KEY_LEFT_CTRL);
+        break;
+    default:
+        break;
+    }
+
+    if (encoder2.pollButton() == PollingEncoder::Pressed) {
+        BootKeyboard.press(KEY_LEFT_CTRL);
+        BootKeyboard.write(KEY_W);
+        BootKeyboard.release(KEY_LEFT_CTRL);
+    }
+
+    PollingEncoder::Direction enc3Direction = encoder3.pollDirection();
+
+    switch (enc3Direction) {
+    case PollingEncoder::Left:
+        BootKeyboard.write(KEY_VOLUME_DOWN);
+        break;
+    case PollingEncoder::Right:
+        BootKeyboard.write(KEY_VOLUME_UP);
+        break;
+    default:
+        break;
+    }
+
+    switch(encoder3.pollButton()) {
+    case PollingEncoder::Pressed:
+        BootKeyboard.press(KEY_MUTE);
+        break;
+    case PollingEncoder::Released:
+        BootKeyboard.release(KEY_MUTE);
+        break;
+    default:
+        break;
+    }
+
     sync_leds();
 
     static bool next_is_break = false;
     uint8_t scan_code = Ps2Protocol.popScancode();
 
     if (scan_code) {
-        Serial.println(scan_code, HEX);
+       // Serial.println(scan_code, HEX);
 
         switch (aabfb6_status) {
         case 0:

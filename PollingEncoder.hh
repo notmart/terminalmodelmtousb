@@ -31,16 +31,25 @@ public:
         Right
     };
 
-    PollingEncoder(uint8_t leftPin, uint8_t rightPin);
+    enum ButtonState {
+        Unchanged,
+        Pressed,
+        Released
+    };
+
+    PollingEncoder(uint8_t leftPin, uint8_t rightPin, uint8_t buttonPin);
 
 
-    PollingEncoder::Direction poll();
+    PollingEncoder::Direction pollDirection();
+    PollingEncoder::ButtonState pollButton();
 
 private:
     uint8_t m_leftPin;
     uint8_t m_rightPin;
+    uint8_t m_buttonPin;
 
-    uint8_t m_lastEncoded;
+    uint8_t m_lastEncoded = None;
+    uint8_t m_lastButtonState = Unchanged;
 };
 
 
