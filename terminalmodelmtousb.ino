@@ -37,9 +37,9 @@ static void (*macro_to_execute)() = nullptr;
 #define DATA_PIN 3
 #define IRQ_PIN 2
 
-#define numLockLed 4
+#define numLockLed 6
 #define capsLed 5
-#define scrollLed 6
+#define scrollLed 4
 
 
 PollingEncoder encoder1(10, 16, 7);
