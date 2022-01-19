@@ -61,7 +61,11 @@ PollingEncoder::Direction PollingEncoder::pollDirection()
 
 PollingEncoder::ButtonState PollingEncoder::pollButton()
 {
+    if ((millis() - m_lastButtonDebounceTime) < s_buttonDebounceDelay) {
+        return Unchanged;
+    }
     const ButtonState buttonState = digitalRead(m_buttonPin) ? Pressed : Released;
+    m_lastButtonDebounceTime = millis();
 
     if (m_lastButtonState != buttonState) {
         m_lastButtonState = buttonState;

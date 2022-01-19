@@ -44,6 +44,8 @@ public:
     PollingEncoder::ButtonState pollButton();
 
 private:
+    const static uint8_t  s_buttonDebounceDelay = 50;
+    long m_lastButtonDebounceTime = 0;
     uint8_t m_leftPin;
     uint8_t m_rightPin;
     uint8_t m_buttonPin;

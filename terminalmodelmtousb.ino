@@ -92,14 +92,14 @@ void loop() {
     switch (enc2Direction) {
     case PollingEncoder::Left:
         BootKeyboard.press(KEY_LEFT_CTRL);
-        BootKeyboard.press(KEY_LEFT_SHIFT);
-        BootKeyboard.write(KEY_TAB);
-        BootKeyboard.release(KEY_LEFT_SHIFT);
+        BootKeyboard.write(KEY_Z);
         BootKeyboard.release(KEY_LEFT_CTRL);
         break;
     case PollingEncoder::Right:
         BootKeyboard.press(KEY_LEFT_CTRL);
-        BootKeyboard.write(KEY_TAB);
+        BootKeyboard.press(KEY_LEFT_SHIFT);
+        BootKeyboard.write(KEY_Z);
+        BootKeyboard.release(KEY_LEFT_SHIFT);
         BootKeyboard.release(KEY_LEFT_CTRL);
         break;
     default:
@@ -108,7 +108,7 @@ void loop() {
 
     if (encoder2.pollButton() == PollingEncoder::Pressed) {
         BootKeyboard.press(KEY_LEFT_CTRL);
-        BootKeyboard.write(KEY_W);
+        BootKeyboard.write(KEY_S);
         BootKeyboard.release(KEY_LEFT_CTRL);
     }
 

@@ -26,7 +26,7 @@ void macro_2()
 
 void macro_3()
 {
-    
+    BootKeyboard.println("git push");
 }
 
 void macro_4()
